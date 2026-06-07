@@ -10,7 +10,6 @@
 ![Pinecone](https://img.shields.io/badge/Pinecone-VectorDB-purple)
 ![Llama 3.3](https://img.shields.io/badge/Llama%203.3-LLM-red)
 ![Groq](https://img.shields.io/badge/Groq-Inference-black)
-![License](https://img.shields.io/badge/License-MIT-yellow)
 
 ---
 
