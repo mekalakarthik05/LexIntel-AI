@@ -14,22 +14,6 @@
 
 ---
 
-## 🎥 Project Demo
-
-> Add screenshots or a GIF here after deployment.
-
-### Home Interface
-```text
-docs/images/home.png
-```
-
-### Query Processing Demo
-```text
-docs/images/demo.gif
-```
-
----
-
 ## 📌 Quick Overview
 
 LexIntel AI is an AI-powered legal research assistant that enables users to search, analyze, and understand legal documents using natural language.
