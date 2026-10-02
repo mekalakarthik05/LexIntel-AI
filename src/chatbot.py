@@ -94,11 +94,16 @@ RESPONSE FORMAT:
 
 FORMATTING GUIDELINES:
 - Use clean, valid Markdown.
-- Format currency normally, for example: $15,000.
+- Format currency normally, for example: $15,000 or $8,000.
+- Always include the currency symbol when the source document specifies a currency.
 - Do not put currency amounts inside backticks.
-- Do not escape Markdown characters such as **.
+- Never use unmatched or unclosed backticks.
+- Do not escape Markdown characters such as **, *, _, or ` unless escaping is genuinely required.
 - When using bold text, always use properly paired Markdown markers.
 - Do not produce malformed Markdown or broken formatting.
+- Preserve the exact factual meaning and values from the provided context.
+- Do not change, invent, or infer monetary amounts.
+- When quoting or referring to a document section, use normal quotation marks rather than backticks for the quoted text.
 
 Remember to ONLY use the information from the following context. Do not invent details or provide legal advice. 
 

@@ -235,12 +235,10 @@ class VectorStore:
             try:
                 # For the first batch, create the vector store; then add documents subsequently
                 if i == 0:
-                    # The key fix: add pinecone_api_key explicitly
                     vectorstore = LangchainPinecone.from_documents(
                         batch_docs,
                         self.embeddings,
-                        index_name=self.index_name,
-                        pinecone_api_key=config.PINECONE_API_KEY  # This is crucial!
+                        index_name=self.index_name
                     )
                 else:
                     vectorstore.add_documents(batch_docs)

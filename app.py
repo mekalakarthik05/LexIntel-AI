@@ -76,7 +76,33 @@ def main():
         
         if st.button("Reset Conversation"):
             reset_conversation()
-        
+
+        st.divider()
+        st.header("Document Upload")
+        uploaded_file = st.file_uploader("Choose a PDF or TXT file", type=["pdf", "txt"])
+        if uploaded_file is not None:
+            st.caption(f"Selected file: {uploaded_file.name}")
+            if st.button("Upload / Process Document"):
+                try:
+                    with st.spinner("Processing document..."):
+                        response = requests.post(
+                            f"{API_URL}/upload",
+                            files={"file": (uploaded_file.name, uploaded_file.getvalue(), uploaded_file.type or "application/octet-stream")}
+                        )
+
+                    if response.status_code == 200:
+                        payload = response.json()
+                        st.success(payload.get("message", "Document processed successfully."))
+                        st.write(f"Filename: {payload.get('filename')}")
+                        st.write(f"Status: {payload.get('status')}")
+                        st.write(f"Chunks processed: {payload.get('chunks')}")
+                        st.write(f"Indexed: {payload.get('indexed')}")
+                    else:
+                        detail = response.json().get("detail", "Upload failed.")
+                        st.error(detail)
+                except Exception as exc:
+                    st.error(f"Error: {str(exc)}")
+
         st.divider()
         st.header("Document References")
         doc_refs = get_document_sources()

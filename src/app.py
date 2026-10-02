@@ -1,4 +1,7 @@
-from fastapi import FastAPI, HTTPException, Depends
+import os
+import shutil
+import tempfile
+from fastapi import FastAPI, HTTPException, Depends, UploadFile, File
 from pydantic import BaseModel
 from typing import Optional, List, Dict, Any
 from contextlib import asynccontextmanager
@@ -6,6 +9,7 @@ from contextlib import asynccontextmanager
 from src.vector_store import VectorStore, get_global_model_and_tokenizer
 from src.chatbot import LegalDocumentAssistant
 from src.session_manager import SessionManager
+from src.document_processor import DocumentProcessor
 
 # Define request and response models
 class Query(BaseModel):
@@ -25,6 +29,13 @@ class SessionInfoResponse(BaseModel):
     session_id: str
     created_at: str
     last_active: str
+
+class UploadDocumentResponse(BaseModel):
+    status: str
+    filename: str
+    chunks: int
+    indexed: bool
+    message: str
 
 # Global variables
 vectorstore = None
@@ -73,6 +84,55 @@ def create_chatbot():
 @app.get("/")
 async def root():
     return {"message": "Legal Document Assistant API is running. Send POST requests to /chat endpoint."}
+
+@app.post("/upload", response_model=UploadDocumentResponse)
+async def upload_document(file: UploadFile = File(...)):
+    """Upload a PDF or TXT file and index it using the existing document-processing and Pinecone pipeline."""
+    if not file.filename:
+        raise HTTPException(status_code=400, detail="No file selected")
+
+    ext = os.path.splitext(file.filename)[1].lower()
+    if ext not in {".pdf", ".txt"}:
+        raise HTTPException(status_code=400, detail="Unsupported file type. Please upload a PDF or TXT file.")
+
+    file_bytes = await file.read()
+    if not file_bytes:
+        raise HTTPException(status_code=400, detail="Uploaded file is empty.")
+
+    temp_dir = tempfile.mkdtemp(prefix="lexintel_upload_")
+    temp_path = os.path.join(temp_dir, file.filename)
+
+    try:
+        with open(temp_path, "wb") as output_file:
+            output_file.write(file_bytes)
+
+        processor = DocumentProcessor()
+        loaded_documents = processor.load_documents(temp_dir)
+        if not loaded_documents:
+            raise HTTPException(status_code=400, detail="No readable content found in the uploaded file.")
+
+        processed_documents = processor.process_documents(loaded_documents)
+        if not processed_documents:
+            raise HTTPException(status_code=500, detail="Document processing failed.")
+
+        vector_store = VectorStore()
+        upload_result = vector_store.upload_documents(processed_documents)
+        if upload_result is None:
+            raise HTTPException(status_code=500, detail="Document indexing failed.")
+
+        return UploadDocumentResponse(
+            status="success",
+            filename=file.filename,
+            chunks=len(processed_documents),
+            indexed=True,
+            message="Document processed successfully."
+        )
+    except HTTPException:
+        raise
+    except Exception as exc:
+        raise HTTPException(status_code=500, detail=f"Document upload failed: {str(exc)}")
+    finally:
+        shutil.rmtree(temp_dir, ignore_errors=True)
 
 @app.post("/chat", response_model=ChatResponse)
 async def chat(
