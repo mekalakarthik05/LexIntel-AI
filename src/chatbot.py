@@ -4,6 +4,7 @@ from langchain.chains import ConversationalRetrievalChain
 from langchain.prompts import PromptTemplate, ChatPromptTemplate, SystemMessagePromptTemplate, HumanMessagePromptTemplate
 from src.config import config
 import logging
+import unicodedata
 
 logging.basicConfig(
     level=logging.INFO,
@@ -20,7 +21,7 @@ class LegalDocumentAssistant:
     def __init__(self, vectorstore):
         self.llm = ChatGroq(
             api_key=config.GROQ_API_KEY,
-            model_name="llama-3.3-70b-versatile",
+            model_name="openai/gpt-oss-20b",
             streaming=False,
             temperature=0.3,  
             max_tokens=1024
@@ -90,6 +91,14 @@ RESPONSE FORMAT:
 2. Include relevant citations to document sections when possible
 3. Explain technical legal terms that may be unfamiliar
 4. If the question cannot be answered from the documents, clearly state this limitation
+
+FORMATTING GUIDELINES:
+- Use clean, valid Markdown.
+- Format currency normally, for example: $15,000.
+- Do not put currency amounts inside backticks.
+- Do not escape Markdown characters such as **.
+- When using bold text, always use properly paired Markdown markers.
+- Do not produce malformed Markdown or broken formatting.
 
 Remember to ONLY use the information from the following context. Do not invent details or provide legal advice. 
 
@@ -184,9 +193,18 @@ Context:
             logger.info(f"Processing query: {query}")
             
             response = self.chain.invoke({"question": query})
-            
+
+            logger.info(f"Retrieved documents: {len(response.get('source_documents', []))}")
+            for i, doc in enumerate(response.get("source_documents", [])):
+                logger.info(f"Document {i}: {doc.page_content[:500]}")
+
             answer = response.get("answer", "").strip()
-            logger.debug(f"Raw answer: {answer}")
+            answer = unicodedata.normalize("NFKC", answer)
+            answer = answer.replace("\u202f", " ")
+            answer = answer.replace("\u00a0", " ")
+            answer = answer.replace("\u2011", "-")
+            logger.info(f"RAW LLM ANSWER: {repr(answer)}")
+            
             
             self._update_conversation_state(query, answer)
             

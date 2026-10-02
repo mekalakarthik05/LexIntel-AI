@@ -4,7 +4,7 @@ import json
 import time
 from datetime import datetime
 
-API_URL = "http://localhost:8000"  
+API_URL = "http://127.0.0.1:8001"
 
 def get_or_create_session_id():
     if "session_id" not in st.session_state:
